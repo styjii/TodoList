@@ -13,6 +13,7 @@ export default function App() {
     deleteTodo,
     toggleSelect,
     completeSelected,
+    todos
   } = useTodos();
 
   return (
@@ -26,6 +27,8 @@ export default function App() {
           filter={filter}
           setFilter={setFilter}
           completeSelected={completeSelected}
+          todos={todos}
+          selected={selected}
         />
 
         <TodoList

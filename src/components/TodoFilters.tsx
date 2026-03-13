@@ -1,22 +1,33 @@
-import type { Filter } from "../types";
+import type { Filter, Todo } from "../types";
 
 interface Props {
   filter: Filter;
   setFilter: (filter: Filter) => void;
   completeSelected: () => void;
+  todos: Todo[];
+  selected: string[];
 }
 
 export default function TodoFilters({
   filter,
   setFilter,
   completeSelected,
+  todos,
+  selected
 }: Props) {
+  const isNoneSelected = selected.length === 0;
+
+  const count = (value: Filter) => {
+    if (value === "all") return todos.length;
+    return todos.filter(t => t.priority === value).length;
+  };
+
   const btn = (value: Filter, label: string) => (
     <button
       onClick={() => setFilter(value)}
-      className={`filter-btn ${filter === value && "active"}`}
+      className={`filter-btn ${filter === value ? "active" : ""}`}
     >
-      {label}
+      {label} ({count(value)})
     </button>
   );
 
@@ -31,7 +42,9 @@ export default function TodoFilters({
 
       <button
         onClick={completeSelected}
-        className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700"
+        disabled={isNoneSelected}
+        className={`bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-opacity 
+          ${isNoneSelected ? "opacity-50 cursor-not-allowed" : "opacity-100"}`}
       >
         Terminer les tâches
       </button>
