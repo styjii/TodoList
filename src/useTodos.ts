@@ -13,13 +13,9 @@ const saveTodos = (todos: Todo[]) => {
 };
 
 export function useTodos() {
-  const [todos, setTodos] = useState<Todo[]>([]);
+  const [todos, setTodos] = useState<Todo[]>(() => loadTodos());
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<string[]>([]);
-
-  useEffect(() => {
-    setTodos(loadTodos());
-  }, []);
 
   useEffect(() => {
     saveTodos(todos);
