@@ -1,6 +1,5 @@
-export type Priority = "important" | "normal" | "low";
-
-export type Filter = "all" | Priority;
+export type Priority = 'low' | 'medium' | 'high';
+export type FilterType = Priority | 'all';
 
 export interface Todo {
   id: string;

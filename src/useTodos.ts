@@ -1,71 +1,91 @@
-import { useEffect, useState } from "react";
-import type { Todo, Priority, Filter } from "./types";
+import { useState, useEffect, useMemo } from "react";
+import type { Todo, Priority, FilterType } from "./types";
+import { STORAGE_KEY, loadTodos, PRIORITY_LABELS } from "./constants";
 
-const STORAGE_KEY = "vite_react_todos";
-
-const loadTodos = (): Todo[] => {
-  const data = localStorage.getItem(STORAGE_KEY);
-  return data ? JSON.parse(data) : [];
-};
-
-const saveTodos = (todos: Todo[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
-};
-
-export function useTodos() {
-  const [todos, setTodos] = useState<Todo[]>(() => loadTodos());
-  const [filter, setFilter] = useState<Filter>("all");
-  const [selected, setSelected] = useState<string[]>([]);
+const useTodos = () => {
+  const [todos, setTodos] = useState<Todo[]>(loadTodos);
+  const [filter, setFilter] = useState<FilterType>("all");
 
   useEffect(() => {
-    saveTodos(todos);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
   }, [todos]);
 
-  const addTodo = (text: string, priority: Priority) => {
-    if (!text.trim()) return;
+  const filteredTodos = useMemo(() => {
+    return filter === "all"
+      ? todos
+      : todos.filter((t) => t.priority === filter);
+  }, [todos, filter]);
 
+  const addTodo = (text: string, priority: Priority) => {
     const newTodo: Todo = {
       id: crypto.randomUUID(),
-      text,
+      text: text.trim(),
       priority,
       completed: false,
     };
-
     setTodos((prev) => [newTodo, ...prev]);
+  };
+
+  const toggleTodo = (id: string) => {
+    setTodos((prev) =>
+      prev.map((t) =>
+        t.id === id ? { ...t, completed: !t.completed } : t,
+      ),
+    );
   };
 
   const deleteTodo = (id: string) => {
     setTodos((prev) => prev.filter((t) => t.id !== id));
-    setSelected((prev) => prev.filter((sid) => sid !== id));
   };
 
-  const toggleSelect = (id: string) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
-    );
-  };
-
-  const completeSelected = () => {
+  const completeFiltered = () => {
+    const ids = filteredTodos.map((t) => t.id);
     setTodos((prev) =>
       prev.map((t) =>
-        selected.includes(t.id) ? { ...t, completed: true } : t
-      )
+        ids.includes(t.id) ? { ...t, completed: true } : t,
+      ),
     );
-    setSelected([]);
   };
 
-  const filteredTodos =
-    filter === "all" ? todos : todos.filter((t) => t.priority === filter);
+  const deleteFiltered = () => {
+    const label =
+      filter === "all" ? "toutes" : `"${PRIORITY_LABELS[filter]}"`;
+    if (confirm(`Supprimer les tâches ${label} ?`)) {
+      const ids = filteredTodos.map((t) => t.id);
+      setTodos((prev) => prev.filter((t) => !ids.includes(t.id)));
+    }
+  };
+
+  const isAllFilteredCompleted = useMemo(() => {
+    return (
+      filteredTodos.length > 0 && filteredTodos.every((t) => t.completed)
+    );
+  }, [filteredTodos]);
+
+  const toggleAllFiltered = () => {
+    const ids = filteredTodos.map((t) => t.id);
+    const targetValue = !isAllFilteredCompleted;
+
+    setTodos((prev) =>
+      prev.map((t) =>
+        ids.includes(t.id) ? { ...t, completed: targetValue } : t,
+      ),
+    );
+  };
 
   return {
     todos,
     filteredTodos,
-    selected,
     filter,
     setFilter,
     addTodo,
+    toggleTodo,
     deleteTodo,
-    toggleSelect,
-    completeSelected,
+    completeFiltered,
+    deleteFiltered,
+    isAllFilteredCompleted,
+    toggleAllFiltered,
   };
-}
+};
+
+export default useTodos;
